@@ -1,5 +1,5 @@
 import { ref, onMounted } from 'vue';
-import { fetchPlanets, fetchVehicles } from '../services/swapiService';
+import { fetchPlanets, fetchResidents, fetchVehicles } from '../services/swapiService';
 
 export default function usePlanetComparison() {
   const planets = ref([]);
@@ -22,12 +22,22 @@ export default function usePlanetComparison() {
     updateCommonVehicles();
   }
 
-  function updateCommonVehicles() {
-    const vehiclesLists = selectedPlanets.value.map(p => p.vehicles).filter(v => v.length > 0);
-    if (vehiclesLists.length > 0) {
-      commonVehicles.value = allVehicles.value.filter(v => 
-        vehiclesLists.every(list => list.includes(v.url))
+  async function updateCommonVehicles() {
+    if (selectedPlanets.value.length > 1) {
+      const residentUrls = selectedPlanets.value.flatMap((p) => p.residents).filter((url) => url);
+      const residents = await fetchResidents(residentUrls);
+      const vehicleUrls = residents.flatMap((r) => r.vehicles);
+
+      const vehicleCount = vehicleUrls.reduce((acc, url) => {
+        acc[url] = (acc[url] || 0) + 1;
+        return acc;
+      }, {});
+
+      const commonVehicleUrls = Object.keys(vehicleCount).filter(
+        (url) => vehicleCount[url] === selectedPlanets.value.length
       );
+
+      commonVehicles.value = allVehicles.value.filter((v) => commonVehicleUrls.includes(v.url));
     } else {
       commonVehicles.value = [];
     }
