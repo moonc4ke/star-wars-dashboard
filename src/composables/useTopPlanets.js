@@ -15,10 +15,22 @@ export default function useTopPlanets() {
     const residentUrls = topPlanets.value.flatMap((p) => p.residents).filter((url) => url);
     if (residentUrls.length > 0) {
       const residents = await fetchResidents(residentUrls);
-      const vehicleUrls = [...new Set(residents.flatMap((r) => r.vehicles))];
+      const vehicleUrls = residents.map((r) => r.vehicles).filter((v) => v.length > 0);
+
       if (vehicleUrls.length > 0) {
-        const vehicles = await fetchVehicles();
-        commonVehicles.value = vehicles.filter((v) => vehicleUrls.includes(v.url));
+        const allVehicleUrls = vehicleUrls.flat();
+        const vehicleFrequency = allVehicleUrls.reduce((acc, url) => {
+          acc[url] = (acc[url] || 0) + 1;
+          return acc;
+        }, {});
+
+        const commonVehicleUrls = Object.keys(vehicleFrequency).filter(
+          (url) => vehicleFrequency[url] === topPlanets.value.length
+        );
+        if (commonVehicleUrls.length > 0) {
+          const vehicles = await fetchVehicles();
+          commonVehicles.value = vehicles.filter((v) => commonVehicleUrls.includes(v.url));
+        }
       }
     }
   }
