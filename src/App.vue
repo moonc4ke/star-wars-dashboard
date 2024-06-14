@@ -1,16 +1,12 @@
 <script setup>
-import { RouterLink, RouterView } from 'vue-router'
+import { RouterView } from 'vue-router';
+import NavigationBar from './components/NavigationBar.vue';
 </script>
 
 <template>
-  <header>
-    <div class="wrapper">
-      <nav>
-        <RouterLink to="/">Top Planets</RouterLink>
-        <RouterLink to="/compare">Planet Comparison</RouterLink>
-      </nav>
-    </div>
-  </header>
+  <div class="max-w-screen-xl mx-auto px-2 sm:px-8">
+    <NavigationBar />
 
-  <RouterView />
+    <RouterView />
+  </div>
 </template>
