@@ -1,13 +1,38 @@
 import axios from 'axios';
 
 const BASE_URL = 'https://swapi.dev/api/';
-const BATCH_SIZE = 10;
 const CACHE_DURATION = 30 * 60 * 1000;
+const MAX_CONCURRENT_REQUESTS = 5;
+const BATCH_SIZE = 10;
+let pendingRequests = 0;
 const inMemoryCache = new Map();
+const requestQueue = [];
 
-async function fetchData(url) {
+const processQueue = () => {
+  if (pendingRequests < MAX_CONCURRENT_REQUESTS && requestQueue.length) {
+    const { url, resolve, reject } = requestQueue.shift();
+    pendingRequests++;
+    axios
+      .get(url)
+      .then((response) => {
+        const data = response.data;
+        const cacheKey = `swapi:${url}`;
+        pendingRequests--;
+        inMemoryCache.set(cacheKey, { data, expiry: Date.now() + CACHE_DURATION });
+        localStorage.setItem(cacheKey, JSON.stringify({ data, expiry: Date.now() + CACHE_DURATION }));
+        processQueue();
+        resolve(data);
+      })
+      .catch((error) => {
+        pendingRequests--;
+        processQueue();
+        reject(error);
+      });
+  }
+};
+
+async function requestHandler(url) {
   const cacheKey = `swapi:${url}`;
-
   if (inMemoryCache.has(cacheKey)) {
     const memCache = inMemoryCache.get(cacheKey);
     if (Date.now() < memCache.expiry) {
@@ -28,42 +53,30 @@ async function fetchData(url) {
     }
   }
 
-  try {
-    const response = await axios.get(url);
-    const dataToCache = {
-      data: response.data,
-      expiry: Date.now() + CACHE_DURATION,
-    };
-    localStorage.setItem(cacheKey, JSON.stringify(dataToCache));
-    inMemoryCache.set(cacheKey, dataToCache);
-    return response.data;
-  } catch (error) {
-    console.error('API fetch error:', error);
-    throw error;
-  }
+  return new Promise((resolve, reject) => {
+    requestQueue.push({ url, resolve, reject });
+    processQueue();
+  });
 }
 
 async function batchFetch(urls, batchSize) {
   let results = [];
   for (let i = 0; i < urls.length; i += batchSize) {
-    const batch = urls.slice(i, i + batchSize);
-    const responses = await Promise.all(batch.map((url) => fetchData(url)));
+    const batch = urls.slice(i, Math.min(i + batchSize, urls.length));
+    const responses = await Promise.all(batch.map((url) => requestHandler(url)));
     results = results.concat(responses.map((res) => (res.results ? res.results : res)).flat());
   }
   return results;
 }
 
 async function fetchAllPagesInBatches(baseUrl) {
-  const firstPage = await fetchData(baseUrl);
+  const firstPage = await requestHandler(baseUrl);
   const totalPages = Math.ceil(firstPage.count / firstPage.results.length);
   let allPageUrls = [baseUrl];
   for (let i = 2; i <= totalPages; i++) {
     allPageUrls.push(`${baseUrl}?page=${i}`);
   }
-
-  const dynamicBatchSize = Math.max(1, Math.ceil(totalPages / BATCH_SIZE));
-  const allPagesResults = await batchFetch(allPageUrls, dynamicBatchSize);
-  return allPagesResults;
+  return await batchFetch(allPageUrls, BATCH_SIZE);
 }
 
 export const fetchPlanets = () => fetchAllPagesInBatches(`${BASE_URL}planets/`);
