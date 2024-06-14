@@ -5,7 +5,7 @@ import NavigationBar from './components/NavigationBar.vue';
 
 <template>
   <div class="max-w-screen-xl mx-auto px-2 sm:px-8">
-    <NavigationBar />
+    <NavigationBar class="mb-2" />
 
     <RouterView />
   </div>
