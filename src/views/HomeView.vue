@@ -9,7 +9,7 @@ const { topPlanets, commonVehicles, loading } = useTopPlanets();
   <div>
     <div v-if="loading">Loading Top Populated Planets Data...</div>
     <div v-else>
-      <h2 class="text-xl font-bold mb-2">Top Populated Planets</h2>
+      <h1 class="text-xl font-bold mb-2">Top Populated Planets</h1>
 
       <div class="flow-root mt-6 mb-10">
         <dl class="-my-3 divide-y divide-gray-100 text-sm">
