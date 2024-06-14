@@ -4,8 +4,10 @@ import { fetchPlanets, fetchResidents, fetchVehicles } from '../services/swapiSe
 export default function useTopPlanets() {
   const topPlanets = ref([]);
   const commonVehicles = ref([]);
+  const loading = ref(false);
 
   async function loadTopPlanets() {
+    loading.value = true;
     const allPlanets = await fetchPlanets();
     const sortedPlanets = allPlanets
       .filter((p) => p.population !== 'unknown')
@@ -33,9 +35,10 @@ export default function useTopPlanets() {
         }
       }
     }
+    loading.value = false;
   }
 
   onMounted(loadTopPlanets);
 
-  return { topPlanets, commonVehicles };
+  return { topPlanets, commonVehicles, loading };
 }
