@@ -1,5 +1,14 @@
 <script setup>
+import { ref } from 'vue';
 import { RouterLink } from 'vue-router';
+
+const mobileMenuCheckbox = ref(null);
+
+function toggleMenu() {
+  if (mobileMenuCheckbox.value) {
+    mobileMenuCheckbox.value.checked = false;
+  }
+}
 </script>
 
 <template>
@@ -31,7 +40,7 @@ import { RouterLink } from 'vue-router';
 
         <div class="flex items-center gap-4">
           <label class="relative z-40 cursor-pointer px-3 py-6 md:hidden" for="mobile-menu">
-            <input class="peer hidden" type="checkbox" id="mobile-menu" />
+            <input class="peer hidden" ref="mobileMenuCheckbox" type="checkbox" id="mobile-menu" />
             <div
               class="relative z-50 block h-[1px] w-7 bg-black bg-transparent content-[''] before:absolute before:top-[-0.35rem] before:z-50 before:block before:h-full before:w-full before:bg-black before:transition-all before:duration-200 before:ease-out before:content-[''] after:absolute after:right-0 after:bottom-[-0.35rem] after:block after:h-full after:w-full after:bg-black after:transition-all after:duration-200 after:ease-out after:content-[''] peer-checked:bg-transparent before:peer-checked:top-0 before:peer-checked:w-full before:peer-checked:rotate-45 before:peer-checked:transform after:peer-checked:bottom-0 after:peer-checked:w-full after:peer-checked:-rotate-45 after:peer-checked:transform"
             ></div>
@@ -43,8 +52,8 @@ import { RouterLink } from 'vue-router';
             >
               <div class="float-right min-h-full w-[85%] bg-white px-6 pt-16 shadow-2xl">
                 <menu class="flex gap-4 flex-col">
-                  <li><RouterLink to="/">Top Planets</RouterLink></li>
-                  <li><RouterLink to="/compare">Planet Comparison</RouterLink></li>
+                  <li @click="toggleMenu"><RouterLink to="/">Top Planets</RouterLink></li>
+                  <li @click="toggleMenu"><RouterLink to="/compare">Planet Comparison</RouterLink></li>
                 </menu>
               </div>
             </div>
