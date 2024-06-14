@@ -6,10 +6,14 @@ export default function usePlanetComparison() {
   const selectedPlanets = ref([]);
   const commonVehicles = ref([]);
   const allVehicles = ref([]);
+  const loading = ref(false);
+  const loadingCommonVehicles = ref(false);
 
   async function loadPlanetsAndVehicles() {
+    loading.value = true;
     planets.value = await fetchPlanets();
     allVehicles.value = await fetchVehicles();
+    loading.value = false;
   }
 
   function updateSelection(planet) {
@@ -23,6 +27,7 @@ export default function usePlanetComparison() {
   }
 
   async function updateCommonVehicles() {
+    loadingCommonVehicles.value = true;
     if (selectedPlanets.value.length > 1) {
       const residentUrls = selectedPlanets.value.flatMap((p) => p.residents).filter((url) => url);
       const residents = await fetchResidents(residentUrls);
@@ -41,9 +46,10 @@ export default function usePlanetComparison() {
     } else {
       commonVehicles.value = [];
     }
+    loadingCommonVehicles.value = false;
   }
 
   onMounted(loadPlanetsAndVehicles);
 
-  return { planets, selectedPlanets, commonVehicles, updateSelection };
+  return { planets, selectedPlanets, commonVehicles, updateSelection, loading, loadingCommonVehicles };
 }
