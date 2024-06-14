@@ -3,14 +3,25 @@ import axios from 'axios';
 const BASE_URL = 'https://swapi.dev/api/';
 const BATCH_SIZE = 10;
 const CACHE_DURATION = 30 * 60 * 1000;
+const inMemoryCache = new Map();
 
 async function fetchData(url) {
   const cacheKey = `swapi:${url}`;
-  const cachedData = localStorage.getItem(cacheKey);
 
+  if (inMemoryCache.has(cacheKey)) {
+    const memCache = inMemoryCache.get(cacheKey);
+    if (Date.now() < memCache.expiry) {
+      return memCache.data;
+    } else {
+      inMemoryCache.delete(cacheKey);
+    }
+  }
+
+  const cachedData = localStorage.getItem(cacheKey);
   if (cachedData) {
     const { data, expiry } = JSON.parse(cachedData);
     if (Date.now() < expiry) {
+      inMemoryCache.set(cacheKey, { data, expiry });
       return data;
     } else {
       localStorage.removeItem(cacheKey);
@@ -19,13 +30,12 @@ async function fetchData(url) {
 
   try {
     const response = await axios.get(url);
-    localStorage.setItem(
-      cacheKey,
-      JSON.stringify({
-        data: response.data,
-        expiry: Date.now() + CACHE_DURATION,
-      })
-    );
+    const dataToCache = {
+      data: response.data,
+      expiry: Date.now() + CACHE_DURATION,
+    };
+    localStorage.setItem(cacheKey, JSON.stringify(dataToCache));
+    inMemoryCache.set(cacheKey, dataToCache);
     return response.data;
   } catch (error) {
     console.error('API fetch error:', error);
